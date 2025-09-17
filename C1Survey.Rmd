@@ -1,0 +1,253 @@
+---
+title: "C1Survey"
+output: html_document
+date: "2025-08-27"
+---
+
+
+```{r}
+# for SPSS (read_sav()), stata (read_dta()), SAS(read_sas()) and xpt (read_xpt()) files
+library(haven) 
+
+# for reading csv file (read_csv())
+library(readr)
+
+# for data management
+library(dplyr) 
+
+# for exporting excel files
+library(openxlsx)
+
+library(magrittr)
+
+library(tidyverse)
+
+library(lubridate)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+# Import class one survey data from our Github site.
+
+```{r, chunk1, message=FALSE}
+c1survey_csv <- read_csv("c1survey.csv")
+```
+
+# Determine the number of observations and the number of variables in the data frame.
+
+```{r, chunk2}
+dim(c1survey_csv)
+```
+
+# Rename the column variables to something shorter and that is descriptive of what the variable is about.
+
+```{r, chunk3}
+colnames(c1survey_csv)
+```
+```{r, chunk4}
+names(c1survey_csv) <- c("id", "like_cats", "like_dogs", "have_desert", "slogan", "fav_day", "larkORowl", "fav_food", "fav_drink", "fav_season", "fav_month", "hobby", "program", "specialization", "stat_software", "R_exp", "coding_comfort", "coding_length", "top_three", "public_health_interest", "fav_num", "bday", "bmonth", "country", "state", "city",  "highest_educ_level")
+```
+
+# Display that they are renamed.
+
+```{r, chunk5}
+colnames(c1survey_csv)
+```
+
+# Determine and display the number of factor, integer, numerical, and character variables there are.
+
+```{r, chunk6}
+num_factors <- sum(sapply(c1survey_csv, is.factor))
+num_integers <- sum(sapply(c1survey_csv, is.integer))
+num_numerics <- sum(sapply(c1survey_csv, is.numeric))
+num_characters <- sum(sapply(c1survey_csv, is.character))
+```
+
+```{r, chunk7}
+print(paste("Number of Factor variables:", num_factors))
+print(paste("Number of Integer variables:", num_integers))
+print(paste("Number of Numeric variables (including integers):", num_numerics))
+print(paste("Number of Character variables:", num_characters))
+```
+
+# Check the bday and bmonth variables for any unusual or missing values.
+
+```{r, chunk8}
+ table(c1survey_csv$bday)
+```
+
+```{r, chunk9}
+ table(c1survey_csv$bmonth)
+```
+
+# Describe what you will do with the unusual values:
+- I will replace any unusual values with the correct corresponding numerical values using the mutate function.
+
+```{r, chunk10}
+c1survey_csv <- c1survey_csv %>%
+mutate(bday2 = case_when(
+                        bday == "15-Nov" ~ "15",
+                        bday == "24-Jun" ~ "24",
+                        bday == "June 2nd" ~ "2",
+                        bday == "August 2nd 1997" ~ "2",
+                        TRUE ~ as.character(bday)
+))
+```
+
+```{r, chunk11}
+ table(c1survey_csv$bday2)
+```
+
+```{r, chunk12}
+c1survey_csv <- c1survey_csv %>%
+mutate(bmonth2 = case_when(
+                        bmonth == "May" ~ "5",
+                        bmonth == "November" ~ "11",
+                        bmonth == "October" ~ "10",
+                        bmonth == "August" ~ "8",
+                        bmonth == "Septemeber" ~ "9",
+                        bmonth == "December" ~ "12",
+                        bmonth == "January" ~ "1",
+                        bmonth == "June" ~ "6",
+                        bmonth == "june" ~ "6",
+                        TRUE ~ as.character(bmonth)
+))
+```
+
+```{r, chunk11}
+table(c1survey_csv$bmonth2)
+```
+
+# Find the median bday and month.
+
+```{r, chunk12}
+c1survey_csv$bday2 <- as.numeric(as.character(c1survey_csv$bday2))
+c1survey_csv$bmonth2 <- as.numeric(as.character(c1survey_csv$bmonth2))
+```
+
+```{r, chunk13}
+num_numerics <- sum(sapply(c1survey_csv$bday2, is.numeric))
+num_numerics <- sum(sapply(c1survey_csv$bmonth2, is.numeric))
+print(paste("Number of Numeric variables (including integers):", num_numerics))
+```
+```{r, chunk14}
+median_value <- median(c1survey_csv$bday2)
+median_value <- median(c1survey_csv$bmonth2)
+print(median_value)
+```
+
+# Create a new variable called bseason that gives the season according to Northern Meteorological season in which respondents were born.
+
+```{r, chunk15}
+birthdays <- data.frame(
+  dob = c(c1survey_csv$bmonth2)
+)
+print(birthdays)
+```
+
+```{r, chunk16}
+bseason <- birthdays %>%
+  mutate(
+    month = month(dob), # Extract the month number
+    season = case_when(
+      month %in% 3:5  ~ "Spring",
+      month %in% 6:8  ~ "Summer",
+      month %in% 9:11 ~ "Autumn",
+      TRUE            ~ "Winter" # All other months (12, 1, 2)
+    )
+  )
+
+print(bseason)
+```
+
+# Using the table function, print a table of Seasons in the columns and bmonths in the rows that allows you to check that the coding is correct.
+
+```{r, chunk17}
+my_table <- table(bseason)
+print(my_table)
+```
+
+# Sum the columns using the addmargins function to answer the question of how many classmates were born in each season?
+
+```{r, chunk18}
+bseason_sum <- addmargins(my_table)
+    print(bseason_sum)
+```
+
+# Pick your favorite variables to analyze, come up with a question you want to answer with those variables, generate the code, and provide an answer to your question. Describe what you did using comments (i.e. #’s).
+
+# Using variables like_cats and like_dogs, how many like both cats and dogs?
+
+
+# I will first display the tables which show how people responded to whether they like cats or like dogs.
+
+```{r, chunk19}
+table(c1survey_csv$like_cats)
+```
+```{r, chunk20}
+table(c1survey_csv$like_dogs)
+```
+
+# Next, I will use the mutate function to turn answers "yes" into "Likes cats" and all other answers into "Does not like cats" for the like_cats variable. In this calculation, ambivalence equates to no definitive liking of cats.
+
+```{r, chunk21}
+c1survey_csv <- c1survey_csv %>%
+mutate(cat_lover = case_when(
+                        like_cats == "Yes" ~ "Likes cats",
+                        like_cats == "No" ~ "Does not like cats",
+                        like_cats == "Ambivalent" ~ "Does not like cats"
+))
+```
+
+```{r, chunk22}
+ table(c1survey_csv$cat_lover)
+```
+
+# I will do the same for the like_dogs variable: turn answers "yes" into "Likes dogs" and all other answers into "Does not like dogs." 
+
+```{r, chunk23}
+c1survey_csv <- c1survey_csv %>%
+mutate(dog_lover = case_when(
+                        like_dogs == "Yes" ~ "Likes dogs",
+                        like_dogs == "No" ~ "Does not like dogs",
+                        like_dogs == "Ambivalent" ~ "Does not like dogs"
+))
+```
+
+```{r, chunk24}
+ table(c1survey_csv$dog_lover)
+```
+
+# Lastly, I will use the table function to display all four categories.
+
+```{r, chunk27}
+ table(c1survey_csv$cat_lover, c1survey_csv$dog_lover)
+```
+
+# From the table, we can see that 23 people in the class like both cats and dogs, while 10 people in the class dislike both cats and dogs.
