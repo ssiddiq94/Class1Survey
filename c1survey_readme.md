@@ -13,7 +13,7 @@ real-world data in R markdown.
 - Creates summary statistics (e.g., medians, birth day, birth month, responses)
 ## How to Run the Code
 1. Download or clone this repository to your computer
-2. Open `analysis_code.Rmd` in RStudio
+2. Open `C1Survey.Rmd` in RStudio
 3. Make sure your working directory is set to the folder where the files are
 saved
 4. Run the script
